@@ -1,10 +1,12 @@
-﻿using System.Linq;
+﻿using Microsoft.UI.Xaml.Controls;
+using System.Collections.Generic;
+using System.Linq;
 using Telegram.Td.Api;
 using Unigram.Common;
 using Unigram.Controls;
+using Unigram.Controls.Cells;
 using Unigram.Converters;
 using Unigram.ViewModels;
-using Windows.ApplicationModel.DataTransfer;
 using Windows.UI.Xaml;
 using Windows.UI.Xaml.Controls;
 using Windows.UI.Xaml.Input;
@@ -12,29 +14,30 @@ using Windows.UI.Xaml.Media;
 
 namespace Unigram.Views
 {
-    public sealed partial class ChatsPage : ChatsListView
+    public sealed partial class ChatsPage : UserControl
     {
+        public ChatsViewModel ViewModel => DataContext as ChatsViewModel;
+
+        public MasterDetailState _viewState;
+
         public MainViewModel Main { get; set; }
+
+        public ItemsRepeater Items => Repeater;
 
         public ChatsPage()
         {
             InitializeComponent();
         }
 
-        public bool AllowSelection { get; set; }
-
-        private void ChatsList_ChoosingItemContainer(ListViewBase sender, ChoosingItemContainerEventArgs args)
+        public object ItemsSource
         {
-            if (args.ItemContainer == null)
-            {
-                args.ItemContainer = new ChatsListViewItem(ChatsList);
-                args.ItemContainer.Style = ChatsList.ItemContainerStyle;
-                args.ItemContainer.ContentTemplate = ChatsList.ItemTemplate;
-                args.ItemContainer.ContextRequested += Chat_ContextRequested;
-            }
-
-            args.IsContainerPrepared = true;
+            get => Repeater.ItemsSource;
+            set => Repeater.ItemsSource = value;
         }
+
+        public object Header { get; set; }
+
+        public bool AllowSelection { get; set; }
 
         #region Context menu
 
@@ -49,7 +52,7 @@ namespace Unigram.Views
             var flyout = new MenuFlyout();
 
             var element = sender as FrameworkElement;
-            var chat = element.Tag as Chat;
+            var chat = element.DataContext as Chat;
 
             var position = chat.GetPosition(ViewModel.Items.ChatList);
             if (position == null)
@@ -81,14 +84,14 @@ namespace Unigram.Views
                         var filter = filters.FirstOrDefault(x => x.Id == chatList.ChatFilterId);
                         if (filter != null)
                         {
-                            item.Items.Add(new MenuFlyoutItem { Command = ViewModel.FolderAddCommand, CommandParameter = (filter.Id, chat), Text = filter.Title, Icon = new FontIcon { Glyph = Icons.FromFilter(Icons.ParseFilter(filter.IconName)), FontFamily = App.Current.Resources["TelegramThemeFontFamily"] as FontFamily } });
+                            item.CreateFlyoutItem(ViewModel.FolderAddCommand, (filter.Id, chat), filter.Title, new FontIcon { Glyph = Icons.FromFilter(Icons.ParseFilter(filter.IconName)), FontFamily = App.Current.Resources["TelegramThemeFontFamily"] as FontFamily });
                         }
                     }
 
                     if (filters.Count < 10 && item.Items.Count > 0)
                     {
-                        item.Items.Add(new MenuFlyoutSeparator());
-                        item.Items.Add(new MenuFlyoutItem { Command = ViewModel.FolderCreateCommand, CommandParameter = chat, Text = Strings.Resources.CreateNewFilter, Icon = new FontIcon { Glyph = Icons.Add } });
+                        item.CreateFlyoutSeparator();
+                        item.CreateFlyoutItem(ViewModel.FolderCreateCommand, chat, Strings.Resources.CreateNewFilter, new FontIcon { Glyph = Icons.Add });
 
                         flyout.Items.Add(item);
                     }
@@ -231,50 +234,140 @@ namespace Unigram.Views
 
         private void Chats_DragItemsStarting(object sender, DragItemsStartingEventArgs e)
         {
-            var header = Header as FrameworkElement;
-            var headerVisibility = header != null ? header.Visibility : Visibility.Visible;
+            //var header = Header as FrameworkElement;
+            //var headerVisibility = header != null ? header.Visibility : Visibility.Visible;
 
-            //if (e.Items.Count > 1 || e.Items[0] is Chat chat && !chat.IsPinned || headerVisibility == Visibility.Visible || ChatsList.SelectionMode2 == ListViewSelectionMode.Multiple)
-            //{
-            //    ChatsList.CanReorderItems = false;
-            //    e.Cancel = true;
-            //}
-            //else
-            //{
-            //    ChatsList.CanReorderItems = true;
-            //}
+            ////if (e.Items.Count > 1 || e.Items[0] is Chat chat && !chat.IsPinned || headerVisibility == Visibility.Visible || ChatsList.SelectionMode2 == ListViewSelectionMode.Multiple)
+            ////{
+            ////    ChatsList.CanReorderItems = false;
+            ////    e.Cancel = true;
+            ////}
+            ////else
+            ////{
+            ////    ChatsList.CanReorderItems = true;
+            ////}
         }
 
         private void Chats_DragItemsCompleted(ListViewBase sender, DragItemsCompletedEventArgs args)
         {
-            ChatsList.CanReorderItems = false;
+            //ChatsList.CanReorderItems = false;
 
-            var chatList = ViewModel?.Items.ChatList;
-            if (chatList == null)
+            //var chatList = ViewModel?.Items.ChatList;
+            //if (chatList == null)
+            //{
+            //    return;
+            //}
+
+            //if (args.DropResult == DataPackageOperation.Move && args.Items.Count == 1 && args.Items[0] is Chat chat)
+            //{
+            //    var items = ViewModel.Items;
+            //    var index = items.IndexOf(chat);
+
+            //    var compare = items[index > 0 ? index - 1 : index + 1];
+
+            //    //if (compare.Source != null && index > 0)
+            //    //{
+            //    //    compare = items[index + 1];
+            //    //}
+
+            //    //if (compare.IsPinned)
+            //    //{
+            //    //    ViewModel.ProtoService.Send(new SetPinnedChats(chatList, items.Where(x => x.IsPinned).Select(x => x.Id).ToList()));
+            //    //}
+            //    //else
+            //    //{
+            //    //    ViewModel.Items.Handle(chat.Id, chat.Order);
+            //    //}
+            //}
+        }
+
+        #endregion
+
+        #region Not sure
+
+        #region Selection
+
+        public ListViewSelectionMode SelectionMode2
+        {
+            get { return (ListViewSelectionMode)GetValue(SelectionMode2Property); }
+            set { SetValue(SelectionMode2Property, value); }
+        }
+
+        public static readonly DependencyProperty SelectionMode2Property =
+            DependencyProperty.Register("SelectionMode2", typeof(ListViewSelectionMode), typeof(ChatsPage), new PropertyMetadata(ListViewSelectionMode.None, OnSelectionModeChanged));
+
+        private static void OnSelectionModeChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
+        {
+            ((ChatsPage)d).OnSelectionModeChanged((ListViewSelectionMode)e.NewValue, (ListViewSelectionMode)e.OldValue);
+        }
+
+        private void OnSelectionModeChanged(ListViewSelectionMode newValue, ListViewSelectionMode oldValue)
+        {
+            foreach (var content in Repeater.AllChildren<ChatCell>())
             {
-                return;
+                var item = content.DataContext;
+                content.UpdateViewState(item as Chat, SelectedItem2 == item && SelectionMode2 == ListViewSelectionMode.Single, _viewState == MasterDetailState.Compact, ViewModel.Settings.UseThreeLinesLayout);
+                content.SetSelectionMode(newValue, true);
             }
+        }
 
-            if (args.DropResult == DataPackageOperation.Move && args.Items.Count == 1 && args.Items[0] is Chat chat)
+        public object SelectedItem2
+        {
+            get { return (object)GetValue(SelectedItem2Property); }
+            set { SetValue(SelectedItem2Property, value); }
+        }
+
+        public static readonly DependencyProperty SelectedItem2Property =
+            DependencyProperty.Register("SelectedItem2", typeof(object), typeof(ChatsPage), new PropertyMetadata(ListViewSelectionMode.None, OnSelectedItemChanged));
+
+        private static void OnSelectedItemChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
+        {
+            ((ChatsPage)d).OnSelectedItemChanged((object)e.NewValue, (object)e.OldValue);
+        }
+
+        private void OnSelectedItemChanged(object newValue, object oldValue)
+        {
+            foreach (var content in Repeater.AllChildren<ChatCell>())
             {
-                var items = ViewModel.Items;
-                var index = items.IndexOf(chat);
+                var item = content.DataContext;
+                content.UpdateViewState(item as Chat, SelectedItem2 == item && SelectionMode2 == ListViewSelectionMode.Single, _viewState == MasterDetailState.Compact, ViewModel.Settings.UseThreeLinesLayout);
+                content.SetSelectionMode(SelectionMode2, true);
+            }
+        }
 
-                var compare = items[index > 0 ? index - 1 : index + 1];
+        public void SetSelectedItems(IList<Chat> chats)
+        {
+            foreach (var content in Repeater.AllChildren<ChatCell>())
+            {
+                content.SetSelectionMode(SelectionMode2, false);
+            }
+        }
 
-                //if (compare.Source != null && index > 0)
-                //{
-                //    compare = items[index + 1];
-                //}
+        #endregion
 
-                //if (compare.IsPinned)
-                //{
-                //    ViewModel.ProtoService.Send(new SetPinnedChats(chatList, items.Where(x => x.IsPinned).Select(x => x.Id).ToList()));
-                //}
-                //else
-                //{
-                //    ViewModel.Items.Handle(chat.Id, chat.Order);
-                //}
+        private void OnElementPrepared(ItemsRepeater sender, ItemsRepeaterElementPreparedEventArgs args)
+        {
+            if (args.Element is ChatCell content && content.DataContext is Chat chat)
+            {
+                content.UpdateService(ViewModel.ProtoService, ViewModel);
+                content.UpdateViewState(chat, SelectedItem2 == chat && SelectionMode2 == ListViewSelectionMode.Single, _viewState == MasterDetailState.Compact, ViewModel.Settings.UseThreeLinesLayout);
+                content.UpdateChat(ViewModel.ProtoService, ViewModel, chat, ViewModel.Items.ChatList);
+                content.SetSelectionMode(SelectionMode2, false);
+            }
+        }
+
+        public void UpdateViewState(MasterDetailState state)
+        {
+            _viewState = state;
+            UpdateVisibleChats();
+        }
+
+        private void UpdateVisibleChats()
+        {
+            foreach (var content in Repeater.AllChildren<ChatCell>())
+            {
+                var item = content.DataContext;
+                content.UpdateViewState(item as Chat, SelectedItem2 == item && SelectionMode2 == ListViewSelectionMode.Single, _viewState == MasterDetailState.Compact, ViewModel.Settings.UseThreeLinesLayout);
             }
         }
 

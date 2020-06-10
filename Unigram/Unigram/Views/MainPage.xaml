@@ -704,7 +704,7 @@
                                                      SelectionMode2="{x:Bind ViewModel.Chats.SelectionMode, Mode=TwoWay}"
                                                      AllowSelection="True"
                                                      Grid.Row="1">
-                                        <ListView.Header>
+                                        <local:ChatsPage.Header>
                                             <Grid x:Name="ArchivedChatsPresenter">
                                                 <Border x:Name="ArchivedChatsPanel">
                                                     <cells:ChatCell
@@ -727,7 +727,7 @@
                                                     </Border>
                                                 </Border>
                                             </Grid>
-                                        </ListView.Header>
+                                        </local:ChatsPage.Header>
                                     </local:ChatsPage>
                                 </Grid>
 

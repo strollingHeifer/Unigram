@@ -1,3 +1,4 @@
+using Microsoft.UI.Xaml.Controls;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
@@ -646,7 +647,7 @@ namespace Unigram.ViewModels
             RaisePropertyChanged(() => Items);
         }
 
-        public class ItemsCollection : ObservableCollection<Chat>, ISupportIncrementalLoading,
+        public class ItemsCollection : ObservableCollection<Chat>, ISupportIncrementalLoading, IKeyIndexMapping,
             IHandle<UpdateChatDraftMessage>,
             IHandle<UpdateChatLastMessage>,
             IHandle<UpdateChatPosition>
@@ -885,6 +886,16 @@ namespace Unigram.ViewModels
                 //}
 
                 return _protoService.GetChat(chatId);
+            }
+
+            public string KeyFromIndex(int index)
+            {
+                return this[index].Id.ToString();
+            }
+
+            public int IndexFromKey(string key)
+            {
+                return IndexOf(this.FirstOrDefault(x => key == x.Id.ToString()));
             }
 
             #endregion

@@ -127,7 +127,7 @@ namespace Unigram.Views
                 SettingsFlyout.Placement = FlyoutPlacementMode.BottomEdgeAlignedRight;
             }
 
-            ChatsList.RegisterPropertyChangedCallback(ChatsListView.SelectionMode2Property, List_SelectionModeChanged);
+            ChatsList.RegisterPropertyChangedCallback(ChatsPage.SelectionMode2Property, List_SelectionModeChanged);
 
             var header = ElementCompositionPreview.GetElementVisual(PageHeader);
             header.Clip = header.Compositor.CreateInsetClip();
@@ -304,13 +304,13 @@ namespace Unigram.Views
                     return;
                 }
 
-                var container = chatList.ContainerFromItem(chat) as ListViewItem;
-                if (container == null)
+                var index = chatList.Items.ItemsSourceView.IndexOf(chat);
+                if (index < 0)
                 {
                     return;
                 }
 
-                var chatView = container.ContentTemplateRoot as ChatCell;
+                var chatView = chatList.Items.TryGetElement(index) as ChatCell;
                 if (chatView != null)
                 {
                     action(chatView, chat);
@@ -334,13 +334,13 @@ namespace Unigram.Views
                     return;
                 }
 
-                var container = chatList.ContainerFromItem(chat) as ListViewItem;
-                if (container == null)
+                var index = chatList.Items.ItemsSourceView.IndexOf(chat);
+                if (index < 0)
                 {
                     return;
                 }
 
-                var chatView = container.ContentTemplateRoot as ChatCell;
+                var chatView = chatList.Items.TryGetElement(index) as ChatCell;
                 if (chatView != null)
                 {
                     action(chatView, chat);
@@ -379,13 +379,7 @@ namespace Unigram.Views
                     var chat = ViewModel.Chats.Items[i];
                     if (chat.UpdateFile(update.File))
                     {
-                        var container = ChatsList.ContainerFromIndex(i) as ListViewItem;
-                        if (container == null)
-                        {
-                            continue;
-                        }
-
-                        var chatView = container.ContentTemplateRoot as ChatCell;
+                        var chatView = ChatsList.Items.TryGetElement(i) as ChatCell;
                         if (chatView != null)
                         {
                             chatView.UpdateFile(chat, update.File);
@@ -788,7 +782,7 @@ namespace Unigram.Views
             if (_unloaded)
             {
                 _unloaded = false;
-                ChatsList.ItemsSource = null;
+                //ChatsList.ItemsSource = null;
 
                 Bindings.StopTracking();
                 Bindings.Update();
@@ -1104,11 +1098,11 @@ namespace Unigram.Views
 
             if (index >= 0 && index < ViewModel.Chats.Items.Count)
             {
-                ChatsList.SelectedIndex = index;
+                //ChatsList.SelectedIndex = index;
 
                 if (navigate)
                 {
-                    Navigate(ChatsList.SelectedItem);
+                    Navigate(ChatsList.SelectedItem2);
                 }
             }
             else if (index < 0 && offset == -1 && !navigate)
@@ -2358,11 +2352,11 @@ namespace Unigram.Views
 
         private void Arrow_Click(object sender, RoutedEventArgs e)
         {
-            var scrollViewer = ChatsList.GetScrollViewer();
-            if (scrollViewer != null)
-            {
-                scrollViewer.ChangeView(null, 0, null);
-            }
+            //var scrollViewer = ChatsList.GetScrollViewer();
+            //if (scrollViewer != null)
+            //{
+            //    scrollViewer.ChangeView(null, 0, null);
+            //}
         }
 
         private void Proxy_Click(object sender, RoutedEventArgs e)
